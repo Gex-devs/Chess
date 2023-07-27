@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Group = System.Text.RegularExpressions.Group;
-
+using Match = System.Text.RegularExpressions.Match;
 namespace Chess
 {
     internal static class SanBuilder
@@ -29,17 +29,18 @@ namespace Chess
             var originalPos = new Position();
             var isCapture = false;
 
- 
 
-            foreach (Group group in matches)
+
+            foreach (Group group in matches[0].Groups)
             {
                 if (!group.Success) continue;
 
-                switch (group.Name)
+                var groupName = group.Name;
+
+                switch (groupName)
                 {
-                    case "1":
-                        if (group.Value == "O-O" || group.Value == "O-O-O")
-                            ParseCastling(board, group, moveOut, ref originalPos);
+                    case "1" when group.Value == "O-O" || group.Value == "O-O-O":
+                        ParseCastling(board, group, moveOut, ref originalPos);
                         break;
                     case "2":
                         moveOut.Piece = new Piece(board.Turn, PieceType.FromChar(group.Value[0]));
@@ -50,9 +51,8 @@ namespace Chess
                     case "4":
                         originalPos.Y = Position.FromRank(group.Value[0]);
                         break;
-                    case "5":
-                        if (group.Value == "x" || group.Value == "X")
-                            isCapture = true;
+                    case "5" when group.Value == "x" || group.Value == "X":
+                        isCapture = true;
                         break;
                     case "6":
                         moveOut.NewPosition = new Position(group.Value);

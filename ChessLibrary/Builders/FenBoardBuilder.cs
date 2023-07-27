@@ -75,9 +75,13 @@ namespace Chess
 
             builder = new FenBoardBuilder();
 
-            foreach (Group group in matches)
+            foreach (Group group in matches[0].Groups)
             {
-                switch (group.Name)
+                if (!group.Success) continue;
+
+                var groupName = group.Name;
+
+                switch (groupName)
                 {
                     case "1":
                         PlacePiecesOnBoard(builder, group.Value.AsSpan());
