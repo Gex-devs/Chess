@@ -7,76 +7,78 @@
 // *****************************************************
 //                                    Made by Geras1mleo
 
-namespace Chess;
+using System.Collections.Generic;
 
-internal class EndGameProvider
+namespace Chess
 {
-    private ChessBoard board;
-
-    public EndGameProvider(ChessBoard board)
+    internal class EndGameProvider
     {
-        this.board = board;
-    }
+        private ChessBoard board;
 
-    public EndGameInfo? GetEndGameInfo()
-    {
-        EndGameInfo? endgameInfo = null;
-
-        if (board.moveIndex >= 0
-         && board.executedMoves[board.moveIndex].IsMate)
+        public EndGameProvider(ChessBoard board)
         {
-            if (board.executedMoves[board.moveIndex].IsCheck)
-                endgameInfo = new EndGameInfo(EndgameType.Checkmate, board.Turn.OppositeColor());
-            else
-                endgameInfo = new EndGameInfo(EndgameType.Stalemate, null);
-        }
-        else if (board.LoadedFromFen)
-        {
-            var whiteHasMoves = ChessBoard.PlayerHasMoves(PieceColor.White, board);
-            var blackHasMoves = ChessBoard.PlayerHasMoves(PieceColor.Black, board);
-
-            if (!whiteHasMoves && board.WhiteKingChecked)
-                endgameInfo = new EndGameInfo(EndgameType.Checkmate, PieceColor.Black);
-
-            else if (!blackHasMoves && board.BlackKingChecked)
-                endgameInfo = new EndGameInfo(EndgameType.Checkmate, PieceColor.White);
-
-            else if ((!whiteHasMoves && board.Turn == PieceColor.White) || (!blackHasMoves && board.Turn == PieceColor.Black))
-                endgameInfo = new EndGameInfo(EndgameType.Stalemate, null);
+            this.board = board;
         }
 
-        if (endgameInfo is null)
+        public EndGameInfo? GetEndGameInfo()
         {
-            endgameInfo = ResolveDrawRules(board.AutoEndgameRules);
-        }
+            EndGameInfo? endgameInfo = null;
 
-        return endgameInfo;
-    }
-
-    private EndGameInfo? ResolveDrawRules(AutoEndgameRules autoEndgameRules)
-    {
-        EndGameInfo? endgameInfo = null;
-
-        var rules = new List<EndGameRule>();
-
-        if ((autoEndgameRules & AutoEndgameRules.InsufficientMaterial) == AutoEndgameRules.InsufficientMaterial)
-            rules.Add(new InsufficientMaterialRule(board));
-
-        if ((autoEndgameRules & AutoEndgameRules.Repetition) == AutoEndgameRules.Repetition)
-            rules.Add(new RepetitionRule(board));
-
-        if ((autoEndgameRules & AutoEndgameRules.FiftyMoveRule) == AutoEndgameRules.FiftyMoveRule)
-            rules.Add(new FiftyMoveRule(board));
-
-        for (int i = 0; i < rules.Count && endgameInfo is null; i++)
-        {
-            if (rules[i].IsEndGame())
+            if (board.moveIndex >= 0
+             && board.executedMoves[board.moveIndex].IsMate)
             {
-                endgameInfo = new EndGameInfo(rules[i].Type, null);
+                if (board.executedMoves[board.moveIndex].IsCheck)
+                    endgameInfo = new EndGameInfo(EndgameType.Checkmate, board.Turn.OppositeColor());
+                else
+                    endgameInfo = new EndGameInfo(EndgameType.Stalemate, null);
             }
+            else if (board.LoadedFromFen)
+            {
+                var whiteHasMoves = ChessBoard.PlayerHasMoves(PieceColor.White, board);
+                var blackHasMoves = ChessBoard.PlayerHasMoves(PieceColor.Black, board);
+
+                if (!whiteHasMoves && board.WhiteKingChecked)
+                    endgameInfo = new EndGameInfo(EndgameType.Checkmate, PieceColor.Black);
+
+                else if (!blackHasMoves && board.BlackKingChecked)
+                    endgameInfo = new EndGameInfo(EndgameType.Checkmate, PieceColor.White);
+
+                else if ((!whiteHasMoves && board.Turn == PieceColor.White) || (!blackHasMoves && board.Turn == PieceColor.Black))
+                    endgameInfo = new EndGameInfo(EndgameType.Stalemate, null);
+            }
+
+            if (endgameInfo is null)
+            {
+                endgameInfo = ResolveDrawRules(board.AutoEndgameRules);
+            }
+
+            return endgameInfo;
         }
 
-        return endgameInfo;
+        private EndGameInfo? ResolveDrawRules(AutoEndgameRules autoEndgameRules)
+        {
+            EndGameInfo? endgameInfo = null;
+
+            var rules = new List<EndGameRule>();
+
+            if ((autoEndgameRules & AutoEndgameRules.InsufficientMaterial) == AutoEndgameRules.InsufficientMaterial)
+                rules.Add(new InsufficientMaterialRule(board));
+
+            if ((autoEndgameRules & AutoEndgameRules.Repetition) == AutoEndgameRules.Repetition)
+                rules.Add(new RepetitionRule(board));
+
+            if ((autoEndgameRules & AutoEndgameRules.FiftyMoveRule) == AutoEndgameRules.FiftyMoveRule)
+                rules.Add(new FiftyMoveRule(board));
+
+            for (int i = 0; i < rules.Count && endgameInfo is null; i++)
+            {
+                if (rules[i].IsEndGame())
+                {
+                    endgameInfo = new EndGameInfo(rules[i].Type, null);
+                }
+            }
+
+            return endgameInfo;
+        }
     }
 }
-

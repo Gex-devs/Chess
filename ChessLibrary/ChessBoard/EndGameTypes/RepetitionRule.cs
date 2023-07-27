@@ -7,97 +7,101 @@
 // *****************************************************
 //                                    Made by Geras1mleo
 
-namespace Chess;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
-/// <summary>
-/// https://www.chessprogramming.org/Repetitions
-/// </summary>
-internal class RepetitionRule : EndGameRule
+namespace Chess
 {
-    private const int MINIMUM_MOVES_COUNT = 8; // at least 8 moves required to get threefold repetition
-
-    public RepetitionRule(ChessBoard board) : base(board) { }
-
-    internal override EndgameType Type => EndgameType.Repetition;
-
-    internal override bool IsEndGame()
+    /// <summary>
+    /// https://www.chessprogramming.org/Repetitions
+    /// </summary>
+    internal class RepetitionRule : EndGameRule
     {
-        bool isRepetition = false;
-        var movesCount = board.MoveIndex + 1;
+        private const int MINIMUM_MOVES_COUNT = 8; // at least 8 moves required to get threefold repetition
 
-        if (movesCount >= MINIMUM_MOVES_COUNT
-        && board.LastIrreversibleMoveIndex <= board.MoveIndex - MINIMUM_MOVES_COUNT) // If last 8 moves were reversible
+        public RepetitionRule(ChessBoard board) : base(board) { }
+
+        internal override EndgameType Type => EndgameType.Repetition;
+
+        internal override bool IsEndGame()
         {
-            var currentIndex = board.MoveIndex;
+            bool isRepetition = false;
+            var movesCount = board.MoveIndex + 1;
 
-            HashSet<ChessBoard> piecesPositions = new HashSet<ChessBoard>(new ChessBoardComparer());
-            piecesPositions.Add(new ChessBoard(board.pieces, board.DisplayedMoves) { FenBuilder = board.FenBuilder, moveIndex = board.MoveIndex });
-
-            board.MoveIndex -= MINIMUM_MOVES_COUNT;
-
-            piecesPositions.Add(new ChessBoard(board.pieces, board.DisplayedMoves) { FenBuilder = board.FenBuilder, moveIndex = board.MoveIndex });
-
-            if (piecesPositions.Count == 1)
+            if (movesCount >= MINIMUM_MOVES_COUNT
+            && board.LastIrreversibleMoveIndex <= board.MoveIndex - MINIMUM_MOVES_COUNT) // If last 8 moves were reversible
             {
-                board.MoveIndex += (MINIMUM_MOVES_COUNT / 2);
+                var currentIndex = board.MoveIndex;
+
+                HashSet<ChessBoard> piecesPositions = new HashSet<ChessBoard>(new ChessBoardComparer());
+                piecesPositions.Add(new ChessBoard(board.pieces, board.DisplayedMoves) { FenBuilder = board.FenBuilder, moveIndex = board.MoveIndex });
+
+                board.MoveIndex -= MINIMUM_MOVES_COUNT;
 
                 piecesPositions.Add(new ChessBoard(board.pieces, board.DisplayedMoves) { FenBuilder = board.FenBuilder, moveIndex = board.MoveIndex });
+
+                if (piecesPositions.Count == 1)
+                {
+                    board.MoveIndex += (MINIMUM_MOVES_COUNT / 2);
+
+                    piecesPositions.Add(new ChessBoard(board.pieces, board.DisplayedMoves) { FenBuilder = board.FenBuilder, moveIndex = board.MoveIndex });
+                }
+
+                board.MoveIndex = currentIndex; // Setting back to original positions
+
+                isRepetition = piecesPositions.Count == 1;
             }
 
-            board.MoveIndex = currentIndex; // Setting back to original positions
-
-            isRepetition = piecesPositions.Count == 1;
+            return isRepetition;
         }
-
-        return isRepetition;
     }
-}
 
-internal class ChessBoardComparer : IEqualityComparer<ChessBoard>
-{
-    public bool Equals(ChessBoard? x, ChessBoard? y)
+    internal class ChessBoardComparer : IEqualityComparer<ChessBoard>
     {
-        bool isEqual = false;
-
-        if (x is null && y is null)
+        public bool Equals(ChessBoard? x, ChessBoard? y)
         {
-            isEqual = true;
-        }
-        else if (x is not null && y is not null)
-        {
-            isEqual = true;
+            bool isEqual = false;
 
-            for (int i = 0; i < x.pieces.GetLength(0) && isEqual; i++)
+            if (x is null && y is null)
             {
-                for (int j = 0; j < x.pieces.GetLength(1) && isEqual; j++)
-                {
-                    if (x.pieces[i, j] is null != y.pieces[i, j] is null)
-                        isEqual = false;
+                isEqual = true;
+            }
+            else if (x is not null && y is not null)
+            {
+                isEqual = true;
 
-                    if (x.pieces[i, j] is not null && y.pieces[i, j] is not null)
+                for (int i = 0; i < x.pieces.GetLength(0) && isEqual; i++)
+                {
+                    for (int j = 0; j < x.pieces.GetLength(1) && isEqual; j++)
                     {
-                        isEqual = x.pieces[i, j].Color == y.pieces[i, j].Color && x.pieces[i, j].Type == y.pieces[i, j].Type;
+                        if (x.pieces[i, j] is null != y.pieces[i, j] is null)
+                            isEqual = false;
+
+                        if (x.pieces[i, j] is not null && y.pieces[i, j] is not null)
+                        {
+                            isEqual = x.pieces[i, j].Color == y.pieces[i, j].Color && x.pieces[i, j].Type == y.pieces[i, j].Type;
+                        }
                     }
                 }
+
+                isEqual &= ChessBoard.HasRightToCastle(PieceColor.White, CastleType.King, x) == ChessBoard.HasRightToCastle(PieceColor.White, CastleType.King, y);
+                isEqual &= ChessBoard.HasRightToCastle(PieceColor.White, CastleType.Queen, x) == ChessBoard.HasRightToCastle(PieceColor.White, CastleType.Queen, y);
+                isEqual &= ChessBoard.HasRightToCastle(PieceColor.Black, CastleType.King, x) == ChessBoard.HasRightToCastle(PieceColor.Black, CastleType.King, y);
+                isEqual &= ChessBoard.HasRightToCastle(PieceColor.Black, CastleType.Queen, x) == ChessBoard.HasRightToCastle(PieceColor.Black, CastleType.Queen, y);
+
+                isEqual &= ChessBoard.LastMoveEnPassantPosition(x) == ChessBoard.LastMoveEnPassantPosition(y);
+            }
+            else
+            {
+                isEqual = false;
             }
 
-            isEqual &= ChessBoard.HasRightToCastle(PieceColor.White, CastleType.King, x) == ChessBoard.HasRightToCastle(PieceColor.White, CastleType.King, y);
-            isEqual &= ChessBoard.HasRightToCastle(PieceColor.White, CastleType.Queen, x) == ChessBoard.HasRightToCastle(PieceColor.White, CastleType.Queen, y);
-            isEqual &= ChessBoard.HasRightToCastle(PieceColor.Black, CastleType.King, x) == ChessBoard.HasRightToCastle(PieceColor.Black, CastleType.King, y);
-            isEqual &= ChessBoard.HasRightToCastle(PieceColor.Black, CastleType.Queen, x) == ChessBoard.HasRightToCastle(PieceColor.Black, CastleType.Queen, y);
-
-            isEqual &= ChessBoard.LastMoveEnPassantPosition(x) == ChessBoard.LastMoveEnPassantPosition(y);
+            return isEqual;
         }
-        else
+
+        public int GetHashCode([DisallowNull] ChessBoard obj)
         {
-            isEqual = false;
+            return 0;
         }
-
-        return isEqual;
-    }
-
-    public int GetHashCode([DisallowNull] ChessBoard obj)
-    {
-        return 0;
     }
 }

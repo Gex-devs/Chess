@@ -7,22 +7,22 @@
 // *****************************************************
 //                                    Made by Geras1mleo
 
-namespace Chess;
-
-/// <summary>
-/// https://www.chessprogramming.org/Fifty-move_Rule
-/// </summary>
-internal class FiftyMoveRule : EndGameRule
+namespace Chess
 {
-    private const int MAX_HALF_MOVE_CLOCK = 100;
-
-    public FiftyMoveRule(ChessBoard board) : base(board) { }
-
-    internal override EndgameType Type => EndgameType.FiftyMoveRule;
-
-    internal override bool IsEndGame()
+    /// <summary>
+    /// https://www.chessprogramming.org/Fifty-move_Rule
+    /// </summary>
+    internal class FiftyMoveRule : EndGameRule
     {
-        return board.GetHalfMovesCount() >= MAX_HALF_MOVE_CLOCK;
+        private const int MAX_HALF_MOVE_CLOCK = 100;
+
+        public FiftyMoveRule(ChessBoard board) : base(board) { }
+
+        internal override EndgameType Type => EndgameType.FiftyMoveRule;
+
+        internal override bool IsEndGame()
+        {
+            return board.GetHalfMovesCount() >= MAX_HALF_MOVE_CLOCK;
+        }
     }
 }
-
